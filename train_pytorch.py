@@ -71,11 +71,12 @@ if torch.cuda.is_available():
 # CARREGAR E PREPARAR DADOS CIFAR-100
 # =====================================================
 
-# Simple data augmentation for training (fixed - less aggressive)
+# Enhanced data augmentation to combat overfitting
 train_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(p=0.5),
-    transforms.RandomRotation(5),  # Reduced from 15 to 5 degrees
-    transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.05),  # Reduced intensity
+    transforms.RandomRotation(10),  # Increased from 5 to 10 degrees
+    transforms.ColorJitter(brightness=0.15, contrast=0.15, saturation=0.15, hue=0.1),  # Slightly increased
+    transforms.RandomCrop(32, padding=4),  # Added back random crop for more variation
     transforms.ToTensor(),
     transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761))
 ])
@@ -379,7 +380,7 @@ for heads in heads_list:
             num_heads=heads,
             num_layers=blocks,
             mlp_dim=mlp_dim,
-            dropout=0.05  # Reduced dropout from 0.1 to 0.05
+            dropout=0.15  # Increased dropout to combat overfitting
         ).to(device)
 
         total_params = sum(p.numel() for p in model.parameters())
@@ -390,8 +391,8 @@ for heads in heads_list:
         print(f"   - Parâmetros totais: {total_params:,}")
         print()
 
-        # Create optimizer and scheduler
-        optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
+        # Create optimizer and scheduler (with stronger regularization)
+        optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-4)  # Increased weight decay
         total_steps = EPOCHS * len(train_loader)
         scheduler = CosineScheduler(optimizer, LEARNING_RATE, total_steps)
         
@@ -403,12 +404,12 @@ for heads in heads_list:
         # TensorBoard writer
         writer = SummaryWriter(log_dir=os.path.join(run_dir, "tensorboard"))
 
-        # Training variables
+        # Training variables (more aggressive early stopping)
         best_accuracy = 0
         patience_counter = 0
-        patience = 5
+        patience = 8  # Increased patience to allow for longer convergence
         lr_reduction_counter = 0
-        lr_reduction_patience = 3
+        lr_reduction_patience = 4  # More patient LR reduction
         
         history = {
             'train_loss': [], 'train_acc': [], 
@@ -469,12 +470,12 @@ for heads in heads_list:
                 print(f'  📉 Reduced learning rate to: {optimizer.param_groups[0]["lr"]:.6f}')
                 lr_reduction_counter = 0
             
-            # Early stopping
-            if patience_counter >= patience:
-                print(f'  ⏹️  Early stopping triggered after {patience} epochs without improvement')
-                break
+        # Early stopping (more aggressive)
+        if patience_counter >= patience:
+            print(f'  ⏹️  Early stopping triggered after {patience} epochs without improvement')
+            break
             
-            print('-' * 50)
+        print('-' * 50)
 
         writer.close()
         training_time = time.time() - start_time
