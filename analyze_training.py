@@ -17,6 +17,7 @@ VISION TRANSFORMER TRAINING ANALYSIS UTILITIES
 📁 INPUT FILES:
   - runs_pytorch/*/training_data.pkl (assignment compliance)
   - runs_optimized_pytorch/training_data_complete.pkl (high performance)
+  - runs_sota_pytorch/training_data_complete.pkl (SOTA optimization)
 =============================================================================
 """
 
@@ -36,7 +37,7 @@ sns.set_palette("husl")
 class TrainingAnalyzer:
     def __init__(self, data_dirs: List[str] = None):
         if data_dirs is None:
-            data_dirs = ["runs_pytorch", "runs_optimized_pytorch"]
+            data_dirs = ["runs_pytorch", "runs_optimized_pytorch", "runs_sota_pytorch"]
         self.data_dirs = data_dirs
         self.training_data = {}
         self.load_all_data()
@@ -63,6 +64,14 @@ class TrainingAnalyzer:
                 data = pickle.load(f)
                 self.training_data['high_performance'] = data
                 print(f"   ✅ Loaded: high_performance")
+        
+        # Load SOTA optimization data
+        sota_file = "runs_sota_pytorch/training_data_complete.pkl"
+        if os.path.exists(sota_file):
+            with open(sota_file, 'rb') as f:
+                data = pickle.load(f)
+                self.training_data['sota_optimization'] = data
+                print(f"   ✅ Loaded: sota_optimization")
         
         print(f"📊 Total experiments loaded: {len(self.training_data)}")
     

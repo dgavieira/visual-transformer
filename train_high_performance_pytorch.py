@@ -73,7 +73,7 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed(SEED)
     torch.cuda.manual_seed_all(SEED)
 
-device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:3' if torch.cuda.is_available() else 'cpu')
 print(f"🔧 Using device: {device}")
 if torch.cuda.is_available():
     print(f"   GPU: {torch.cuda.get_device_name(2)}")

@@ -37,6 +37,12 @@ def load_experiment_data():
         with open(hp_file, 'rb') as f:
             data['high_performance'] = pickle.load(f)
     
+    # Load SOTA optimization experiment
+    sota_file = "runs_sota_pytorch/training_data_complete.pkl"
+    if os.path.exists(sota_file):
+        with open(sota_file, 'rb') as f:
+            data['sota_optimization'] = pickle.load(f)
+    
     return data
 
 def plot_comparison_curves(data, save_path="training_comparison.png"):
