@@ -62,10 +62,10 @@ if torch.cuda.is_available():
     # Enable mixed precision
     torch.backends.cudnn.benchmark = True
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:3' if torch.cuda.is_available() else 'cpu')
 print(f"🔧 Using device: {device}")
 if torch.cuda.is_available():
-    print(f"   GPU: {torch.cuda.get_device_name()}")
+    print(f"   GPU: {torch.cuda.get_device_name(3)}")
 
 # =====================================================
 # CARREGAR E PREPARAR DADOS CIFAR-100
