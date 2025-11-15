@@ -43,6 +43,12 @@ def load_experiment_data():
         with open(sota_file, 'rb') as f:
             data['sota_optimization'] = pickle.load(f)
     
+    # Load SOTA optimization advanced experiment
+    sota_opt_file = "runs_sota_pytorch_optimized/training_data_complete.pkl"
+    if os.path.exists(sota_opt_file):
+        with open(sota_opt_file, 'rb') as f:
+            data['sota_optimized'] = pickle.load(f)
+    
     return data
 
 def plot_comparison_curves(data, save_path="training_comparison.png"):
@@ -128,9 +134,16 @@ def plot_individual_curves(data):
         
         epochs = range(1, len(history['train_acc']) + 1)
         
-        # Accuracy
+        # Accuracy (including EMA if available)
         axes[0].plot(epochs, history['train_acc'], label='Training', linewidth=2)
         axes[0].plot(epochs, history['val_acc'], label='Validation', linewidth=2)
+        
+        # Add EMA accuracy if available (SOTA model)
+        if 'ema_val_acc' in history and history['ema_val_acc']:
+            ema_epochs = range(1, len(history['ema_val_acc']) + 1)
+            axes[0].plot(ema_epochs, history['ema_val_acc'], label='Validation (EMA)', 
+                        linewidth=2, linestyle='--', alpha=0.8)
+        
         axes[0].set_title('Accuracy')
         axes[0].set_xlabel('Epoch')
         axes[0].set_ylabel('Accuracy (%)')
@@ -194,6 +207,13 @@ def generate_summary_report(data):
         print(f"Best Training Accuracy: {best_train_acc:.2f}%")
         print(f"Final Validation Accuracy: {final_val_acc:.2f}%")
         print(f"Final Training Accuracy: {final_train_acc:.2f}%")
+        
+        # Show EMA accuracy if available (SOTA model)
+        if 'ema_val_acc' in history and history['ema_val_acc']:
+            best_ema_acc = max(history['ema_val_acc'])
+            final_ema_acc = history['ema_val_acc'][-1]
+            print(f"Best EMA Accuracy: {best_ema_acc:.2f}%")
+            print(f"Final EMA Accuracy: {final_ema_acc:.2f}%")
         print(f"Epochs Trained: {len(history['train_acc'])}")
         
         if 'training_time_min' in final:

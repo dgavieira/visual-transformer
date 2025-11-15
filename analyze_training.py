@@ -3,13 +3,14 @@
 VISION TRANSFORMER TRAINING ANALYSIS UTILITIES
 =============================================================================
 
-📊 PURPOSE: Load and analyze training data from both ViT implementations
+📊 PURPOSE: Load and analyze training data from all ViT implementations
 🔍 FEATURES: 
   - Load training data from pickle files
-  - Generate comprehensive accuracy curves
+  - Generate comprehensive accuracy curves (including EMA)
   - Compare different configurations
   - Statistical analysis of training progress
   - Export publication-ready plots
+  - SOTA analysis with EMA tracking
 
 🚀 USAGE:
   python analyze_training.py
@@ -18,6 +19,7 @@ VISION TRANSFORMER TRAINING ANALYSIS UTILITIES
   - runs_pytorch/*/training_data.pkl (assignment compliance)
   - runs_optimized_pytorch/training_data_complete.pkl (high performance)
   - runs_sota_pytorch/training_data_complete.pkl (SOTA optimization)
+  - runs_sota_pytorch_optimized/training_data_complete.pkl (SOTA advanced)
 =============================================================================
 """
 
@@ -37,7 +39,7 @@ sns.set_palette("husl")
 class TrainingAnalyzer:
     def __init__(self, data_dirs: List[str] = None):
         if data_dirs is None:
-            data_dirs = ["runs_pytorch", "runs_optimized_pytorch", "runs_sota_pytorch"]
+            data_dirs = ["runs_pytorch", "runs_optimized_pytorch", "runs_sota_pytorch", "runs_sota_pytorch_optimized"]
         self.data_dirs = data_dirs
         self.training_data = {}
         self.load_all_data()
@@ -73,6 +75,14 @@ class TrainingAnalyzer:
                 self.training_data['sota_optimization'] = data
                 print(f"   ✅ Loaded: sota_optimization")
         
+        # Load SOTA optimization advanced data
+        sota_opt_file = "runs_sota_pytorch_optimized/training_data_complete.pkl"
+        if os.path.exists(sota_opt_file):
+            with open(sota_opt_file, 'rb') as f:
+                data = pickle.load(f)
+                self.training_data['sota_optimized'] = data
+                print(f"   ✅ Loaded: sota_optimized")
+        
         print(f"📊 Total experiments loaded: {len(self.training_data)}")
     
     def plot_accuracy_curves(self, save_path: str = "analysis_accuracy_curves.png"):
@@ -94,14 +104,20 @@ class TrainingAnalyzer:
         ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         ax1.grid(True, alpha=0.3)
         
-        # Plot 2: All validation accuracies
+        # Plot 2: All validation accuracies (including EMA)
         ax2 = axes[0, 1]
         for exp_name, data in self.training_data.items():
             history = data['history']
             epochs = range(1, len(history['val_acc']) + 1)
             ax2.plot(epochs, history['val_acc'], label=f"{exp_name} (val)", alpha=0.8)
+            
+            # Plot EMA accuracy if available (SOTA model)
+            if 'ema_val_acc' in history and history['ema_val_acc']:
+                ema_epochs = range(1, len(history['ema_val_acc']) + 1)
+                ax2.plot(ema_epochs, history['ema_val_acc'], label=f"{exp_name} (EMA)", 
+                        alpha=0.8, linestyle='--')
         
-        ax2.set_title('Validation Accuracy Curves')
+        ax2.set_title('Validation Accuracy Curves (+ EMA)')
         ax2.set_xlabel('Epoch')
         ax2.set_ylabel('Accuracy (%)')
         ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -130,8 +146,11 @@ class TrainingAnalyzer:
         for exp_name, data in self.training_data.items():
             if 'final_results' in data:
                 exp_names.append(exp_name)
-                final_accs.append(data['final_results'].get('test_acc', 
-                                 data['final_results'].get('final_accuracy', 0)))
+                # Use EMA accuracy if available (SOTA), otherwise regular accuracy
+                final_acc = (data['final_results'].get('best_ema_accuracy') or 
+                           data['final_results'].get('test_acc') or
+                           data['final_results'].get('final_accuracy', 0))
+                final_accs.append(final_acc)
         
         bars = ax4.bar(exp_names, final_accs, alpha=0.8)
         ax4.set_title('Final Test Accuracy Comparison')
@@ -167,6 +186,7 @@ class TrainingAnalyzer:
                 'Total_Params': config.get('total_params', 'N/A'),
                 'Final_Test_Acc': final.get('test_acc', final.get('final_accuracy', 0)),
                 'Best_Val_Acc': final.get('best_val_acc', max(history.get('val_acc', [0]))),
+                'Best_EMA_Acc': final.get('best_ema_accuracy', 'N/A'),  # SOTA EMA accuracy
                 'Best_Train_Acc': final.get('best_train_acc', max(history.get('train_acc', [0]))),
                 'Training_Time_Min': final.get('training_time_min', 0),
                 'Epochs_Trained': final.get('epochs_trained', len(history.get('train_acc', []))),
