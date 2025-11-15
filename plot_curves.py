@@ -193,7 +193,10 @@ def generate_summary_report(data):
         if 'heads' in config:
             print(f"Configuration: {config['heads']} heads, {config['blocks']} blocks, {config['patch_size']}x{config['patch_size']} patches")
         elif 'num_heads' in config:
-            print(f"Configuration: {config['num_heads']} heads, {config['num_layers']} layers, {config['patch_size']}x{config['patch_size']} patches")
+            patch_size = config.get('patch_size', config.get('PATCH_SIZE', 'N/A'))
+            print(f"Configuration: {config['num_heads']} heads, {config['num_layers']} layers, {patch_size}x{patch_size} patches")
+        else:
+            print(f"Configuration: Advanced SOTA model")
         
         print(f"Parameters: {config.get('total_params', 'N/A'):,}")
         
